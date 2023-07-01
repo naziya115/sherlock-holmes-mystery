@@ -36,7 +36,8 @@ def create_part_1(
 ):
     # Generate story using OpenAI
     prompt = f"""1. Where did the crime take place?\n{input.answer}"""
-    generated_story = openai_service.generate_text(prompt)
+    user = openai_service.create_new_user(user_id=jwt_data.user_id)
+    generated_story = openai_service.generate_text(user=user, answer=prompt)
     
     inserted_id = svc.repository.create_story(
         user_id=jwt_data.user_id, content=generated_story
@@ -56,7 +57,9 @@ def create_part_2(
 ):  
     # Generate story using OpenAI
     prompt = f"""2. How did Sherlock Holmes learn about the case?\n{input.answer}"""
-    generated_story = openai_service.generate_text(prompt)
+    print(openai_service.all_users)
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    generated_story = openai_service.generate_text(user=user, answer=prompt)
     
     update = svc.repository.add_another_part(
         user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
@@ -72,7 +75,8 @@ def create_part_3(
 ):  
     # Generate story using OpenAI
     prompt = f"""3. Who was the victim? What was the primary evidence found at the crime scene?\n{input.answer}"""
-    generated_story = openai_service.generate_text(prompt)
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    generated_story = openai_service.generate_text(user=user, answer=prompt)
     
     update = svc.repository.add_another_part(
         user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
@@ -89,7 +93,8 @@ def create_part_4(
 ):  
     # Generate story using OpenAI
     prompt = f"""4. Who should be the new character that could tell Sherlock more about the case?\n{input.answer}"""
-    generated_story = openai_service.generate_text(prompt)
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    generated_story = openai_service.generate_text(user=user, answer=prompt)
     
     update = svc.repository.add_another_part(
         user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
