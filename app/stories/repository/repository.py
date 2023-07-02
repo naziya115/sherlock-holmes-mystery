@@ -19,7 +19,6 @@ class StoriesRepository:
     
     def add_another_part(self, user_id: str, story_id: str, content: str):
         prev_story = self.database["stories"].find_one({"user_id": ObjectId(user_id), "_id": ObjectId(story_id)})
-        print(prev_story['content'])
 
         if prev_story is None:
             return None
@@ -33,3 +32,7 @@ class StoriesRepository:
                 },
             },
         )
+    
+    def get_prev_story(self, user_id: str, story_id: str):
+        prev_story = self.database["stories"].find_one({"user_id": ObjectId(user_id), "_id": ObjectId(story_id)})
+        return prev_story["content"]

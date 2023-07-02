@@ -34,7 +34,7 @@ def create_part_1(
     jwt_data: JWTData = Depends(parse_jwt_user_data),
     svc: Service = Depends(get_service),
 ):
-    # Generate story using OpenAI
+    # start generating a story
     prompt = f"""1. Where did the crime take place?\n{input.answer}"""
     user = openai_service.create_new_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
@@ -55,9 +55,13 @@ def create_part_2(
     jwt_data: JWTData = Depends(parse_jwt_user_data),
     svc: Service = Depends(get_service),
 ):  
-    # Generate story using OpenAI
-    prompt = f"""2. How did Sherlock Holmes learn about the case?\n{input.answer}"""
-    print(openai_service.all_users)
+    # generate next question
+    prev_story = svc.repository.get_prev_story(user_id=jwt_data.user_id, story_id=input.story_id)
+    next_question = openai_service.generate_next_question(prev_story=prev_story)
+    print(next_question)
+
+    # generate the continuation of the story
+    prompt = f"""AI generated question: {next_question}\nUser's input: {input.answer}"""
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     
@@ -73,8 +77,13 @@ def create_part_3(
     jwt_data: JWTData = Depends(parse_jwt_user_data),
     svc: Service = Depends(get_service),
 ):  
-    # Generate story using OpenAI
-    prompt = f"""3. Who was the victim? What was the primary evidence found at the crime scene?\n{input.answer}"""
+    # generate next question
+    prev_story = svc.repository.get_prev_story(user_id=jwt_data.user_id, story_id=input.story_id)
+    next_question = openai_service.generate_next_question(prev_story=prev_story)
+    print(next_question)
+
+    # generate the continuation of the story
+    prompt =f"""AI generated question: {next_question}\nUser's input: {input.answer}"""
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     
@@ -91,14 +100,17 @@ def create_part_4(
     jwt_data: JWTData = Depends(parse_jwt_user_data),
     svc: Service = Depends(get_service),
 ):  
-    # Generate story using OpenAI
-    prompt = f"""4. Who should be the new character that could tell Sherlock more about the case?\n{input.answer}"""
+    # generate next question
+    prev_story = svc.repository.get_prev_story(user_id=jwt_data.user_id, story_id=input.story_id)
+    next_question = openai_service.generate_next_question(prev_story=prev_story)
+    print(next_question)
+
+    # generate the continuation of the story
+    prompt = f"""AI generated question: {next_question}\nUser's input: {input.answer}"""
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     
     update = svc.repository.add_another_part(
         user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
     ) 
-
     return CreateStoryResponse(inserted_id=input.story_id, generated_story=str(generated_story))
-
