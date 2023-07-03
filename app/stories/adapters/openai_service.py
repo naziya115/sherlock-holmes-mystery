@@ -17,13 +17,19 @@ class OpenAIService:
             openai_api_key=openai.api_key,
             model="gpt-3.5-turbo-0613",
             temperature=0.7,
-            max_tokens=30,
+            max_tokens=900,
         )
 
         self.all_users = []
 
          # llm chain and chat model for questions only
-        self.question_template = "Generate next question to solve the mystery based on the existing story: {story}. Do not repeat previous questions. "
+        self.question_template = """
+        I want you to act as a Dr. Watson,
+        a writer and Sherlock Holmes's close friend.
+        Be close to Arthur Conan Doyle’s style of writing.
+        Ask the user a question for the user to guess what's next based on the existing story: {story}. 
+        ASK ONLY THE QUESTION
+        """
         self.question_prompt = PromptTemplate(
             input_variables=["story"], template=self.question_template
         )
@@ -34,7 +40,7 @@ class OpenAIService:
             openai_api_key=openai.api_key,
             model="gpt-3.5-turbo-0613",
             temperature=0.7,
-            max_tokens=30,
+            max_tokens=50,
         )
 
         self.question_chain = LLMChain(
@@ -58,9 +64,9 @@ class OpenAIService:
             I want you to act as a Dr. Watson,
             a writer and Sherlock Holmes's close friend.
             Be close to Arthur Conan Doyle’s style of writing.
-            Generate story based on the previous parts of the story:
+            Generate a story based on its previous parts:
             {chat_history}
-            {answer} 
+            User's input: {answer} 
         """
         prompt = PromptTemplate(
             input_variables=["chat_history", "answer"], template=template

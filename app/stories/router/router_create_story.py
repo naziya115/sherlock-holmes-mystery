@@ -18,14 +18,13 @@ openai_service = OpenAIService(api_key=openai_api_key)
 
 
 class CreateStoryQ1Request(AppModel):
-    answer: str = Field(default="London")
+    answer: str = Field(default="Where did the crime take place?")
 
 
 class CreateStoryResponse(AppModel):
-    # id: Any = Field(alias="_id")
     inserted_id: Any = Field(alias="_id")
     generated_story: str
-
+    next_question: str
 
 
 @router.post("/q1", status_code=201, response_model=CreateStoryResponse)
@@ -35,19 +34,21 @@ def create_part_1(
     svc: Service = Depends(get_service),
 ):
     # start generating a story
-    prompt = f"""1. Where did the crime take place?\n{input.answer}"""
+    prompt = f"""{input.answer}."""
     user = openai_service.create_new_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
-    
     inserted_id = svc.repository.create_story(
         user_id=jwt_data.user_id, content=generated_story
     )
 
-    return CreateStoryResponse(inserted_id=inserted_id, generated_story=str(generated_story))
+    next_question = openai_service.generate_next_question(prev_story=generated_story)
+
+    return CreateStoryResponse(inserted_id=inserted_id, generated_story=str(generated_story), next_question=str(next_question))
 
 class CreateStoryQ2Request(AppModel):
     story_id: Any = Field(alias="_id")
     answer: str = Field(default="London")
+    next_question: str = Field(default="What was the question? ")
 
 @router.post("/q2")
 def create_part_2(
@@ -55,21 +56,19 @@ def create_part_2(
     jwt_data: JWTData = Depends(parse_jwt_user_data),
     svc: Service = Depends(get_service),
 ):  
-    # generate next question
-    prev_story = svc.repository.get_prev_story(user_id=jwt_data.user_id, story_id=input.story_id)
-    next_question = openai_service.generate_next_question(prev_story=prev_story)
-    print(next_question)
-
     # generate the continuation of the story
-    prompt = f"""AI generated question: {next_question}\nUser's input: {input.answer}"""
+    prompt = f"""{input.answer}.
+    """
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
-    
     update = svc.repository.add_another_part(
         user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
     ) 
 
-    return CreateStoryResponse(inserted_id=input.story_id, generated_story=str(generated_story))
+    # generate next question
+    next_question = openai_service.generate_next_question(prev_story=generated_story)
+
+    return CreateStoryResponse(inserted_id=input.story_id, generated_story=str(generated_story), next_question=str(next_question))
 
 @router.post("/q3")
 def create_part_3(
@@ -77,21 +76,19 @@ def create_part_3(
     jwt_data: JWTData = Depends(parse_jwt_user_data),
     svc: Service = Depends(get_service),
 ):  
-    # generate next question
-    prev_story = svc.repository.get_prev_story(user_id=jwt_data.user_id, story_id=input.story_id)
-    next_question = openai_service.generate_next_question(prev_story=prev_story)
-    print(next_question)
-
     # generate the continuation of the story
-    prompt =f"""AI generated question: {next_question}\nUser's input: {input.answer}"""
+    prompt = f"""{input.answer}. 
+    """
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
-    
     update = svc.repository.add_another_part(
         user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
     ) 
 
-    return CreateStoryResponse(inserted_id=input.story_id, generated_story=str(generated_story))
+    # generate next question
+    next_question = openai_service.generate_next_question(prev_story=generated_story)
+
+    return CreateStoryResponse(inserted_id=input.story_id, generated_story=str(generated_story), next_question=str(next_question))
 
 
 @router.post("/q4")
@@ -100,17 +97,14 @@ def create_part_4(
     jwt_data: JWTData = Depends(parse_jwt_user_data),
     svc: Service = Depends(get_service),
 ):  
-    # generate next question
-    prev_story = svc.repository.get_prev_story(user_id=jwt_data.user_id, story_id=input.story_id)
-    next_question = openai_service.generate_next_question(prev_story=prev_story)
-    print(next_question)
-
     # generate the continuation of the story
-    prompt = f"""AI generated question: {next_question}\nUser's input: {input.answer}"""
+    prompt = f"""Your question: {input.next_question} User's input: {input.answer}. Do not repeat your questions in the output.
+    DO NOT REPEAT YOURSELF. DO NOT REPEAT ALREADY GENERATED PARTS OF THE STORY.
+    DO NOT USE CHAPTERS!
+    """
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
-    
     update = svc.repository.add_another_part(
         user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
     ) 
-    return CreateStoryResponse(inserted_id=input.story_id, generated_story=str(generated_story))
+    return CreateStoryResponse(inserted_id=input.story_id, generated_story=str(generated_story), next_question="")
