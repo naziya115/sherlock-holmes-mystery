@@ -57,8 +57,7 @@ def create_part_2(
     svc: Service = Depends(get_service),
 ):  
     # generate the continuation of the story
-    prompt = f"""{input.answer}.
-    """
+    prompt = f"""{input.answer}."""
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(
@@ -77,8 +76,7 @@ def create_part_3(
     svc: Service = Depends(get_service),
 ):  
     # generate the continuation of the story
-    prompt = f"""{input.answer}. 
-    """
+    prompt = f"""{input.answer}."""
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(
@@ -98,10 +96,7 @@ def create_part_4(
     svc: Service = Depends(get_service),
 ):  
     # generate the continuation of the story
-    prompt = f"""Your question: {input.next_question} User's input: {input.answer}. Do not repeat your questions in the output.
-    DO NOT REPEAT YOURSELF. DO NOT REPEAT ALREADY GENERATED PARTS OF THE STORY.
-    DO NOT USE CHAPTERS!
-    """
+    prompt = f"""{input.answer}. """
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(

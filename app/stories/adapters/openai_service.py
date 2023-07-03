@@ -64,7 +64,7 @@ class OpenAIService:
             I want you to act as a Dr. Watson,
             a writer and Sherlock Holmes's close friend.
             Be close to Arthur Conan Doyle’s style of writing.
-            Generate a story based on its previous parts:
+            Generate a part of the story based on its previous parts:
             {chat_history}
             User's input: {answer} 
         """
