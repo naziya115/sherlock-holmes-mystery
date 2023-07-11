@@ -7,22 +7,21 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 all_users = []
 
+
 class OpenAIService:
     def __init__(self, api_key: str):
         openai.api_key = api_key
 
         self.chat_model = ChatOpenAI(
-            streaming=True,
-            callbacks=[StreamingStdOutCallbackHandler()],
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo-0613",
+            model="gpt-3.5-turbo",
             temperature=0.7,
-            max_tokens=900,
+            max_tokens=10,
         )
 
         self.all_users = []
 
-         # llm chain and chat model for questions only
+        # llm chain and chat model for questions only
         self.question_template = """
         I want you to act as a Dr. Watson,
         a writer and Sherlock Holmes's close friend.
@@ -35,10 +34,8 @@ class OpenAIService:
         )
 
         self.question_model = ChatOpenAI(
-            streaming=True,
-            callbacks=[StreamingStdOutCallbackHandler()],
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo-0613",
+            model="gpt-3.5-turbo",
             temperature=0.7,
             max_tokens=50,
         )
@@ -49,9 +46,34 @@ class OpenAIService:
             prompt=self.question_prompt,
         )
 
+        # llm chain and chat model for questions only
+        self.title_template = """
+        I want you to act as a Dr. Watson,
+        a writer and Sherlock Holmes's close friend.
+        Be close to Arthur Conan Doyle’s style of writing.
+        You need to create a title for a story based on its ending: {story}. 
+        No more than 5 words in each story.
+        """
+        self.title_prompt = PromptTemplate(
+            input_variables=["story"], template=self.title_template
+        )
+
+        self.title_model = ChatOpenAI(
+            openai_api_key=openai.api_key,
+            model="gpt-3.5-turbo",
+            temperature=0.7,
+            max_tokens=50,
+        )
+
+        self.title_chain = LLMChain(
+            llm=self.title_model,
+            verbose=True,
+            prompt=self.title_prompt,
+        )
+
     def generate_text(self, user: dict, answer: str) -> str:
         return user["llm_chain"].predict(answer=answer)
-    
+
     def generate_next_question(self, prev_story: str):
         return self.question_chain.predict(story=prev_story)
 
@@ -73,20 +95,22 @@ class OpenAIService:
         )
 
         llm_chain = LLMChain(
-            llm=self.chat_model, memory=memory, verbose=True, prompt=prompt
+            llm=self.chat_model,
+            memory=memory,
+            verbose=True,
+            prompt=prompt,
         )
-        
-        new_user = {
-            "user_id": user_id,
-            "memory": memory,
-            "llm_chain": llm_chain
-        }
+
+        new_user = {"user_id": user_id, "memory": memory, "llm_chain": llm_chain}
         self.all_users.append(new_user)
 
         return new_user
-    
+
     def get_user(self, user_id):
         for user in self.all_users:
             if user["user_id"] == user_id:
                 return user
         return None
+
+    def generate_title(self, story_ending):
+        return self.title_chain.predict(story=story_ending)
