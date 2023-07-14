@@ -68,7 +68,7 @@ def create_part_2(
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(
-        user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
+        part="2", user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
     )
 
     # generate next question
@@ -92,7 +92,7 @@ def create_part_3(
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(
-        user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
+        part="3", user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
     )
 
     # generate next question
@@ -116,7 +116,7 @@ def create_part_4(
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(
-        user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
+        part="4", user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
     )
     title = openai_service.generate_title(story_ending=generated_story)
     svc.repository.update_title(

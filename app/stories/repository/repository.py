@@ -17,7 +17,7 @@ class StoriesRepository:
 
         insert_result = self.database["stories"].insert_one(payload)
         return insert_result.inserted_id
-    
+
     def update_title(self, user_id: str, story_id: str, title: str):
         return self.database["stories"].update_one(
             filter={"user_id": ObjectId(user_id), "_id": ObjectId(story_id)},
@@ -25,8 +25,8 @@ class StoriesRepository:
                 "$set": {"title": title},
             },
         )
-        
-    def add_another_part(self, user_id: str, story_id: str, content: str):
+
+    def add_another_part(self, part: str, user_id: str, story_id: str, content: str):
         prev_story = self.database["stories"].find_one(
             {"user_id": ObjectId(user_id), "_id": ObjectId(story_id)}
         )
@@ -37,7 +37,9 @@ class StoriesRepository:
         return self.database["stories"].update_one(
             filter={"user_id": ObjectId(user_id), "_id": ObjectId(story_id)},
             update={
-                "$set": {"content": prev_story["content"] + "" + content},
+                "$set": {
+                    "content": prev_story["content"] + part + ") " + content
+                },
             },
         )
 

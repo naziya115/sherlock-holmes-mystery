@@ -11,17 +11,14 @@ class AuthRepository:
     def __init__(self, database: Database):
         self.database = database
 
-    def create_user(self, user: dict):
+    def create_user(self, user: dict) -> str:
         payload = {
             "email": user["email"],
-            "phone": user["phone"],
-            "name": user["name"],
-            "city": user["city"],
             "password": hash_password(user["password"]),
             "created_at": datetime.utcnow(),
         }
 
-        self.database["users"].insert_one(payload)
+        return self.database["users"].insert_one(payload).inserted_id
 
     def get_user_by_id(self, user_id: str) -> Optional[dict]:
         user = self.database["users"].find_one(
@@ -38,15 +35,3 @@ class AuthRepository:
             }
         )
         return user
-
-    def update_user(self, user_id: str, data: dict):
-        self.database["users"].update_one(
-            filter={"_id": ObjectId(user_id)},
-            update={
-                "$set": {
-                    "phone": data["phone"],
-                    "name": data["name"],
-                    "city": data["city"],
-                }
-            },
-        )

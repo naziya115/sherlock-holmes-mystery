@@ -14,9 +14,11 @@ class OpenAIService:
 
         self.chat_model = ChatOpenAI(
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-0613",
+            streaming=True,
+            callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.7,
-            max_tokens=10,
+            max_tokens=5,
         )
 
         self.all_users = []
@@ -35,9 +37,11 @@ class OpenAIService:
 
         self.question_model = ChatOpenAI(
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo",
+            streaming=True,
+            callbacks=[StreamingStdOutCallbackHandler()],
+            model="gpt-3.5-turbo-0613",
             temperature=0.7,
-            max_tokens=50,
+            max_tokens=5,
         )
 
         self.question_chain = LLMChain(
@@ -60,9 +64,11 @@ class OpenAIService:
 
         self.title_model = ChatOpenAI(
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-0613",
+            streaming=True,
+            callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.7,
-            max_tokens=50,
+            max_tokens=5,
         )
 
         self.title_chain = LLMChain(

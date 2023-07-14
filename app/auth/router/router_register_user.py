@@ -1,4 +1,7 @@
 from fastapi import Depends, HTTPException, status
+from typing import Any
+
+from pydantic import Field
 
 from app.utils import AppModel
 
@@ -9,9 +12,6 @@ from . import router
 class RegisterUserRequest(AppModel):
     email: str
     password: str
-    phone: str = ""
-    name: str = ""
-    city: str = ""
 
 
 class RegisterUserResponse(AppModel):
