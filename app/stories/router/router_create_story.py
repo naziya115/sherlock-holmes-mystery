@@ -68,8 +68,19 @@ def create_part_2(
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(
-        part="2", user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
+        user_id=jwt_data.user_id,
+        story_id=input.story_id,
+        content=generated_story,
     )
+
+    # full_story = svc.repository.get_story(
+    #     user_id=jwt_data.user_id, story_id=input.story_id
+    # )
+    # # title = openai_service.generate_title(story_ending=generated_story)
+    # # svc.repository.update_title(
+    # #     title=title, user_id=jwt_data.user_id, story_id=input.story_id
+    # # )
+    # print(openai_service.title_summarization(story=full_story)) 
 
     # generate next question
     next_question = openai_service.generate_next_question(prev_story=generated_story)
@@ -92,7 +103,9 @@ def create_part_3(
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(
-        part="3", user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
+        user_id=jwt_data.user_id,
+        story_id=input.story_id,
+        content=generated_story,
     )
 
     # generate next question
@@ -116,12 +129,18 @@ def create_part_4(
     user = openai_service.get_user(user_id=jwt_data.user_id)
     generated_story = openai_service.generate_text(user=user, answer=prompt)
     update = svc.repository.add_another_part(
-        part="4", user_id=jwt_data.user_id, story_id=input.story_id, content=generated_story
+        user_id=jwt_data.user_id,
+        story_id=input.story_id,
+        content=generated_story,
     )
+    # full_story = svc.repository.get_story(
+    #     user_id=jwt_data.user_id, story_id=input.story_id
+    # )
     title = openai_service.generate_title(story_ending=generated_story)
     svc.repository.update_title(
         title=title, user_id=jwt_data.user_id, story_id=input.story_id
     )
+    # print(openai_service.title_summarization(story=full_story))
 
     return CreateStoryResponse(
         inserted_id=input.story_id,

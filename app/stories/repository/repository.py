@@ -26,7 +26,7 @@ class StoriesRepository:
             },
         )
 
-    def add_another_part(self, part: str, user_id: str, story_id: str, content: str):
+    def add_another_part(self, user_id: str, story_id: str, content: str):
         prev_story = self.database["stories"].find_one(
             {"user_id": ObjectId(user_id), "_id": ObjectId(story_id)}
         )
@@ -37,9 +37,7 @@ class StoriesRepository:
         return self.database["stories"].update_one(
             filter={"user_id": ObjectId(user_id), "_id": ObjectId(story_id)},
             update={
-                "$set": {
-                    "content": prev_story["content"] + part + ") " + content
-                },
+                "$set": {"content": prev_story["content"] + " ) " + content},
             },
         )
 
@@ -57,5 +55,4 @@ class StoriesRepository:
         story = self.database["stories"].find_one(
             {"user_id": ObjectId(user_id), "_id": ObjectId(story_id)}
         )
-        print(story)
         return story
