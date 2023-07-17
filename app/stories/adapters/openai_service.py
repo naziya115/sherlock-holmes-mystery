@@ -3,7 +3,6 @@ from langchain import LLMChain, PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.chains.summarize import load_summarize_chain
 
 
 all_users = []
@@ -15,7 +14,7 @@ class OpenAIService:
 
         self.chat_model = ChatOpenAI(
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo-0613",
+            model="gpt-3.5-turbo",
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.5,
@@ -24,7 +23,7 @@ class OpenAIService:
 
         self.all_users = []
 
-        # llm chain and chat model for questions only
+        # llm chain and chat model for the questions only
         self.question_template = """
         I want you to act as a Dr. Watson,
         a writer and Sherlock Holmes's close friend.
@@ -40,7 +39,7 @@ class OpenAIService:
             openai_api_key=openai.api_key,
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
-            model="gpt-3.5-turbo-0613",
+            model="gpt-3.5-turbo",
             temperature=0.7,
             max_tokens=5,
         )
@@ -51,13 +50,14 @@ class OpenAIService:
             prompt=self.question_prompt,
         )
 
-        # llm chain and chat model for questions only
+        # llm chain and chat model for the title only
         self.title_template = """
         I want you to act as a Dr. Watson,
         a writer and Sherlock Holmes's close friend.
         Be close to Arthur Conan Doyle’s style of writing.
-        You need to create a title based on a story summarization: {story}. 
+        You need to create a title for a story based on its summary: {story}. 
         No more than 5 words in the title.
+        Use " " for both sides of the title.
         """
         self.title_prompt = PromptTemplate(
             input_variables=["story"], template=self.title_template
@@ -65,7 +65,7 @@ class OpenAIService:
 
         self.title_model = ChatOpenAI(
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo-0613",
+            model="gpt-3.5-turbo",
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.7,
@@ -131,13 +131,5 @@ class OpenAIService:
                 return True
         return False
 
-    def generate_title(self, story_ending):
-        return self.title_chain.predict(story=story_ending)
-
-    def title_summarization(self, story):
-        prompt_template = "Use 4-5 sentences to write a concise summary of a Sherlock Holmes detective story. {story}"
-        PROMPT = PromptTemplate(template=prompt_template, input_variables=["story"])
-        chain = load_summarize_chain(
-            self.title_chain, chain_type="map_reduce", prompt=PROMPT
-        )
-        print("chain run: ", chain.run(story))
+    def generate_title(self, story):
+        return self.title_chain.predict(story=story)
