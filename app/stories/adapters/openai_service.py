@@ -18,13 +18,13 @@ class OpenAIService:
             model="gpt-3.5-turbo-0613",
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
-            temperature=0.7,
-            max_tokens=50,
+            temperature=0.5,
+            max_tokens=100,
         )
 
         self.all_users = []
 
-        # llm chain and chat model for the questions only
+        # llm chain and chat model for questions only
         self.question_template = """
         I want you to act as a Dr. Watson,
         a writer and Sherlock Holmes's close friend.
@@ -42,7 +42,7 @@ class OpenAIService:
             callbacks=[StreamingStdOutCallbackHandler()],
             model="gpt-3.5-turbo-0613",
             temperature=0.7,
-            max_tokens=30,
+            max_tokens=5,
         )
 
         self.question_chain = LLMChain(
@@ -51,20 +51,7 @@ class OpenAIService:
             prompt=self.question_prompt,
         )
 
-        self.story_template = """
-            I want you to act as a Dr. Watson,
-            a writer and Sherlock Holmes's close friend.
-            Be close to Arthur Conan Doyle’s style of writing.
-            Generate a part of the story based on its previous parts:
-            {chat_history}
-            User's input: {answer} 
-        """
-
-        self.story_prompt = PromptTemplate(
-            input_variables=["chat_history", "answer"], template=self.story_template
-        )
-
-        # llm chain and chat model for the title only
+        # llm chain and chat model for questions only
         self.title_template = """
         I want you to act as a Dr. Watson,
         a writer and Sherlock Holmes's close friend.
@@ -98,17 +85,32 @@ class OpenAIService:
         return self.question_chain.predict(story=prev_story)
 
     def create_new_user(self, user_id):
-        if self.get_user(user_id) is not None:
-            return self.get_user(user_id)
+        self.remove_existing_user(user_id)
+
         memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
+        )
+
+        template = """
+            I want you to act as a Dr. Watson,
+            a writer and Sherlock Holmes's close friend.
+            Be close to Arthur Conan Doyle’s style of writing.
+            Generate a part of the story based on its previous parts:
+            {chat_history}
+            User's input: {answer} 
+
+            If user's answer is not London, don't use Baker Street as location
+            cuz Baker Street is located in London.
+        """
+        prompt = PromptTemplate(
+            input_variables=["chat_history", "answer"], template=template
         )
 
         llm_chain = LLMChain(
             llm=self.chat_model,
             memory=memory,
             verbose=True,
-            prompt=self.story_prompt,
+            prompt=prompt,
         )
 
         new_user = {"user_id": user_id, "memory": memory, "llm_chain": llm_chain}
@@ -119,28 +121,23 @@ class OpenAIService:
     def get_user(self, user_id):
         for user in self.all_users:
             if user["user_id"] == user_id:
-                memory = ConversationBufferMemory(
-                    memory_key="chat_history", return_messages=True
-                )
-
-                llm_chain = LLMChain(
-                    llm=self.chat_model,
-                    memory=memory,
-                    verbose=True,
-                    prompt=self.story_prompt,
-                )
-                user["memory"] = memory
-                user["llm_chain"] = llm_chain
                 return user
         return None
+
+    def remove_existing_user(self, user_id):
+        for user in self.all_users:
+            if user["user_id"] == user_id:
+                self.all_users.remove(user)
+                return True
+        return False
 
     def generate_title(self, story_ending):
         return self.title_chain.predict(story=story_ending)
 
-    # def title_summarization(self, story):
-    #     prompt_template = "Use 4-5 sentences to write a concise summary of a Sherlock Holmes detective story. {story}"
-    #     PROMPT = PromptTemplate(template=prompt_template, input_variables=["story"])
-    #     chain = load_summarize_chain(
-    #         self.title_chain, chain_type="map_reduce", prompt=PROMPT
-    #     )
-    #     print("chain run: ", chain.run(story))
+    def title_summarization(self, story):
+        prompt_template = "Use 4-5 sentences to write a concise summary of a Sherlock Holmes detective story. {story}"
+        PROMPT = PromptTemplate(template=prompt_template, input_variables=["story"])
+        chain = load_summarize_chain(
+            self.title_chain, chain_type="map_reduce", prompt=PROMPT
+        )
+        print("chain run: ", chain.run(story))
