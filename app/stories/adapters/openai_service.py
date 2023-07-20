@@ -18,7 +18,7 @@ class OpenAIService:
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.5,
-            max_tokens=200,
+            max_tokens=900,
         )
 
         self.all_users = []
@@ -41,7 +41,7 @@ class OpenAIService:
             callbacks=[StreamingStdOutCallbackHandler()],
             model="gpt-3.5-turbo",
             temperature=0.7,
-            max_tokens=30,
+            max_tokens=50,
         )
 
         self.question_chain = LLMChain(
