@@ -18,43 +18,13 @@ class OpenAIService:
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.5,
-            max_tokens=900,
+            max_tokens=100,
         )
 
         self.all_users = []
 
-        # llm chain and chat model for the questions only
-        self.question_template = """
-        I want you to act as a Dr. Watson,
-        a writer and Sherlock Holmes's close friend.
-        Be close to Arthur Conan Doyle’s style of writing.
-        Ask the user a question for the user to guess what's next based on the existing story: {story}. 
-        ASK ONLY THE QUESTION
-        """
-        self.question_prompt = PromptTemplate(
-            input_variables=["story"], template=self.question_template
-        )
-
-        self.question_model = ChatOpenAI(
-            openai_api_key=openai.api_key,
-            streaming=True,
-            callbacks=[StreamingStdOutCallbackHandler()],
-            model="gpt-3.5-turbo",
-            temperature=0.7,
-            max_tokens=50,
-        )
-
-        self.question_chain = LLMChain(
-            llm=self.question_model,
-            verbose=True,
-            prompt=self.question_prompt,
-        )
-
         # llm chain and chat model for the title only
         self.title_template = """
-        I want you to act as a Dr. Watson,
-        a writer and Sherlock Holmes's close friend.
-        Be close to Arthur Conan Doyle’s style of writing.
         You need to create a title for a story based on its summary: {story}. 
         No more than 5 words in the title.
         Use " " for both sides of the title.
@@ -78,8 +48,11 @@ class OpenAIService:
             prompt=self.title_prompt,
         )
 
-    def generate_text(self, user: dict, answer: str) -> str:
-        return user["llm_chain"].predict(answer=answer)
+    def generate_watson_text(self, user: dict, task: str) -> str:
+        return user["watson_chain"].predict(task=task)
+
+    def generate_sherlock_text(self, user: dict, task: str) -> str:
+        return user["sherlock_chain"].predict(task=task)
 
     def generate_next_question(self, prev_story: str):
         return self.question_chain.predict(story=prev_story)
@@ -87,33 +60,61 @@ class OpenAIService:
     def create_new_user(self, user_id):
         self.remove_existing_user(user_id)
 
-        memory = ConversationBufferMemory(
+        # memory and chain for watson only
+        watson_memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         )
 
-        template = """
-            I want you to act as a Dr. Watson,
-            a writer and Sherlock Holmes's close friend.
-            Be close to Arthur Conan Doyle’s style of writing.
-            Generate a part of the story based on its previous parts:
-            {chat_history}
-            User's input: {answer} 
-
-            If user's answer is not London, don't use Baker Street as location
-            cuz Baker Street is located in London.
+        watson_template = """ 
+        {chat_history}
+        I want you to act like Dr. Watson from Arthur Conan Doyle's original books. 
+        Using the tone, manner and vocabulary Watson would use, 
+        You must know all of the knowledge of Dr. Watson. 
+        {task} 
         """
-        prompt = PromptTemplate(
-            input_variables=["chat_history", "answer"], template=template
+        watson_prompt = PromptTemplate(
+            input_variables=["chat_history", "task"], template=watson_template
         )
 
-        llm_chain = LLMChain(
+        watson_chain = LLMChain(
             llm=self.chat_model,
-            memory=memory,
+            memory=watson_memory,
             verbose=True,
-            prompt=prompt,
+            prompt=watson_prompt,
         )
 
-        new_user = {"user_id": user_id, "memory": memory, "llm_chain": llm_chain}
+        # memory and chain for sherlock holmes only
+        sherlock_memory = ConversationBufferMemory(
+            memory_key="chat_history", return_messages=True
+        )
+
+        sherlock_template = """
+        I want you to act like Sherlock Holmes from Arthur Conan Doyle's original books. 
+        I want you to respond and answer like Sherlock Holmes to me (I'm Watson, your companion and a dear friend) 
+        using the tone, manner and vocabulary Sherlock Holmes would use. 
+        Do not write any explanations. Only answer like Sherllock Holmes to me, Watson. 
+        You must know all of the knowledge of Sherlock Holmes. 
+        This is your dialogue with your friend, Watson: {chat_history}
+        {task}
+        """
+        sherlock_prompt = PromptTemplate(
+            input_variables=["chat_history", "task"], template=sherlock_template
+        )
+
+        sherlock_chain = LLMChain(
+            llm=self.chat_model,
+            memory=sherlock_memory,
+            verbose=True,
+            prompt=sherlock_prompt,
+        )
+
+        new_user = {
+            "user_id": user_id,
+            "watson_memory": watson_memory,
+            "watson_chain": watson_chain,
+            "sherlock_memory": watson_memory,
+            "sherlock_chain": sherlock_chain,
+        }
         self.all_users.append(new_user)
 
         return new_user

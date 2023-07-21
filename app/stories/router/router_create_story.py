@@ -17,121 +17,88 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 openai_service = OpenAIService(api_key=openai_api_key)
 
 
-class CreateStoryQ1Request(AppModel):
-    answer: str = Field(default="Where did the crime take place?")
+# class CreateStoryResponse(AppModel):
+#     inserted_id: Any = Field(alias="_id")
+#     generated_story: str
 
 
-class CreateStoryResponse(AppModel):
-    inserted_id: Any = Field(alias="_id")
-    generated_story: str
-    next_question: str
+# @router.post("/settings", status_code=200, response_model=CreateStoryResponse)
+# def create_settings(
+#     jwt_data: JWTData = Depends(parse_jwt_user_data),
+#     svc: Service = Depends(get_service),
+# ):
+#     # start generating a story
+#     watson_prompt = """
+#             I want you to act as Dr. Watson. 
+#             Write in two paragraphs.
+#             Describe what you are doing in the apartment.
+#             Also include what is Sherlock Holmes involved in 
+#             (choose one from his usual activities, except solving the crime.)
+#             Use I, instead of Dr. Watson. Don't say I, Dr. Watson.
+#             """
+#     user = openai_service.create_new_user(user_id=jwt_data.user_id)
+#     settings = openai_service.generate_text(user=user, task=watson_prompt)
+
+#     inserted_id = svc.repository.create_story(
+#         user_id=jwt_data.user_id,
+#         content=settings,
+#         title="The Adventures of Sherlock Holmes: AI edition",
+#     )
+
+#     return CreateStoryResponse(inserted_id=inserted_id, generated_story=str(settings))
 
 
-@router.post("/q1", status_code=200, response_model=CreateStoryResponse)
-def create_part_1(
-    input: CreateStoryQ1Request,
-    jwt_data: JWTData = Depends(parse_jwt_user_data),
-    svc: Service = Depends(get_service),
-):
-    # start generating a story
-    prompt = f"""{input.answer}."""
-    user = openai_service.create_new_user(user_id=jwt_data.user_id)
-
-    generated_story = openai_service.generate_text(user=user, answer=prompt)
-    inserted_id = svc.repository.create_story(
-        user_id=jwt_data.user_id, content=generated_story, title=""
-    )
-
-    next_question = openai_service.generate_next_question(prev_story=generated_story)
-
-    return CreateStoryResponse(
-        inserted_id=inserted_id,
-        generated_story=str(generated_story),
-        next_question=str(next_question),
-    )
+# class CreateStoryRequest(AppModel):
+#     story_id: str
+#     q1: str = Field(
+#         default="You may greet Sherlock Holmes and ask about his activities."
+#     )
 
 
-class CreateStoryQ2Request(AppModel):
-    story_id: Any = Field(alias="_id")
-    answer: str = Field(default="London")
-    next_question: str = Field(default="What was the question? ")
+# @router.post("/respond_1_sherlock", status_code=200, response_model=CreateStoryResponse)
+# def create_respond_1_sherlock(
+#     input: CreateStoryRequest,
+#     jwt_data: JWTData = Depends(parse_jwt_user_data),
+#     svc: Service = Depends(get_service),
+# ):
+#     # generate respond to Watson
+#     sherlock_prompt = f"""
+#             I want you to act as Sherlock Holmes. 
+#             Answer to your friend, Dr. Watson, who said 
+#             “{input.q1}“ in your usual manner.
+#             """
+#     user = openai_service.get_user(user_id=jwt_data.user_id)
+#     respond_1 = openai_service.generate_text(user=user, task=sherlock_prompt)
+#     update = svc.repository.add_another_part(
+#         user_id=jwt_data.user_id,
+#         story_id=input.story_id,
+#         content=respond_1,
+#     )
 
+#     return CreateStoryResponse(
+#         inserted_id=input.story_id, generated_story=str(respond_1)
+#     )
 
-@router.post("/q2")
-def create_part_2(
-    input: CreateStoryQ2Request,
-    jwt_data: JWTData = Depends(parse_jwt_user_data),
-    svc: Service = Depends(get_service),
-):
-    # generate the continuation of the story
-    prompt = f"""{input.answer}."""
-    user = openai_service.get_user(user_id=jwt_data.user_id)
-    generated_story = openai_service.generate_text(user=user, answer=prompt)
-    update = svc.repository.add_another_part(
-        user_id=jwt_data.user_id,
-        story_id=input.story_id,
-        content=generated_story,
-    )
+# @router.post("/respond_2_sherlock", status_code=200, response_model=CreateStoryResponse)
+# def create_respond_1_sherlock(
+#     input: CreateStoryRequest,
+#     jwt_data: JWTData = Depends(parse_jwt_user_data),
+#     svc: Service = Depends(get_service),
+# ):
+#     # generate respond to Watson
+#     sherlock_prompt = f"""
+#             I want you to act as Sherlock Holmes. 
+#             Answer to your friend, Dr. Watson, who said 
+#             “{input.q1}“ in your usual manner.
+#             """
+#     user = openai_service.get_user(user_id=jwt_data.user_id)
+#     respond_1 = openai_service.generate_text(user=user, task=sherlock_prompt)
+#     update = svc.repository.add_another_part(
+#         user_id=jwt_data.user_id,
+#         story_id=input.story_id,
+#         content=respond_1,
+#     )
 
-    # generate next question
-    next_question = openai_service.generate_next_question(prev_story=generated_story)
-
-    return CreateStoryResponse(
-        inserted_id=input.story_id,
-        generated_story=str(generated_story),
-        next_question=str(next_question),
-    )
-
-
-@router.post("/q3")
-def create_part_3(
-    input: CreateStoryQ2Request,
-    jwt_data: JWTData = Depends(parse_jwt_user_data),
-    svc: Service = Depends(get_service),
-):
-    # generate the continuation of the story
-    prompt = f"""{input.answer}. Make the generated story in a conversation format."""
-    user = openai_service.get_user(user_id=jwt_data.user_id)
-    generated_story = openai_service.generate_text(user=user, answer=prompt)
-    update = svc.repository.add_another_part(
-        user_id=jwt_data.user_id,
-        story_id=input.story_id,
-        content=generated_story,
-    )
-
-    # generate next question
-    next_question = openai_service.generate_next_question(prev_story=generated_story)
-
-    return CreateStoryResponse(
-        inserted_id=input.story_id,
-        generated_story=str(generated_story),
-        next_question=str(next_question),
-    )
-
-
-@router.post("/q4")
-def create_part_4(
-    input: CreateStoryQ2Request,
-    jwt_data: JWTData = Depends(parse_jwt_user_data),
-    svc: Service = Depends(get_service),
-):
-    # generate the continuation of the story
-    prompt = f"""{input.answer}. End the story with a very witty ending. Use Sherlock Holmes's deductive skills."""
-    user = openai_service.get_user(user_id=jwt_data.user_id)
-    generated_story = openai_service.generate_text(user=user, answer=prompt)
-    update = svc.repository.add_another_part(
-        user_id=jwt_data.user_id,
-        story_id=input.story_id,
-        content=generated_story,
-    )
-
-    title = openai_service.generate_title(generated_story)
-    svc.repository.update_title(
-        title=title, user_id=jwt_data.user_id, story_id=input.story_id
-    )
-
-    return CreateStoryResponse(
-        inserted_id=input.story_id,
-        generated_story=str(generated_story),
-        next_question="",
-    )
+#     return CreateStoryResponse(
+#         inserted_id=input.story_id, generated_story=str(respond_1)
+#     )
