@@ -14,11 +14,11 @@ class OpenAIService:
 
         self.chat_model = ChatOpenAI(
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-16k",
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.5,
-            max_tokens=100,
+            max_tokens=50,
         )
 
         self.all_users = []
@@ -35,7 +35,7 @@ class OpenAIService:
 
         self.title_model = ChatOpenAI(
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-16k",
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.7,
@@ -70,6 +70,7 @@ class OpenAIService:
         I want you to act like Dr. Watson from Arthur Conan Doyle's original books. 
         Using the tone, manner and vocabulary Watson would use, 
         You must know all of the knowledge of Dr. Watson. 
+        My request is to continue your story, starting from here, NEVER REPEAT WHAT YOU HAVE ALREADY WROTE '{chat_history}'
         {task} 
         """
         watson_prompt = PromptTemplate(
@@ -90,11 +91,11 @@ class OpenAIService:
 
         sherlock_template = """
         I want you to act like Sherlock Holmes from Arthur Conan Doyle's original books. 
-        I want you to respond and answer like Sherlock Holmes to me (I'm Watson, your companion and a dear friend) 
+        I want you to respond and answer like Sherlock Holmes to me (I'm Watson, a dear friend of yours) 
         using the tone, manner and vocabulary Sherlock Holmes would use. 
-        Do not write any explanations. Only answer like Sherllock Holmes to me, Watson. 
+        Do not write any explanations. Only answer like Sherllock Holmes to me.
         You must know all of the knowledge of Sherlock Holmes. 
-        This is your dialogue with your friend, Watson: {chat_history}
+        This is your dialogue with your companion, do not repeat anything that you have already said: {chat_history}
         {task}
         """
         sherlock_prompt = PromptTemplate(

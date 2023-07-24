@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 from fastapi import Depends, Response
 from pydantic import Field
 from app.utils import AppModel
@@ -17,88 +17,205 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 openai_service = OpenAIService(api_key=openai_api_key)
 
 
-# class CreateStoryResponse(AppModel):
-#     inserted_id: Any = Field(alias="_id")
-#     generated_story: str
+class CreateStoryResponse(AppModel):
+    inserted_id: Any = Field(alias="_id")
+    generated_story: str
 
 
-# @router.post("/settings", status_code=200, response_model=CreateStoryResponse)
-# def create_settings(
-#     jwt_data: JWTData = Depends(parse_jwt_user_data),
-#     svc: Service = Depends(get_service),
-# ):
-#     # start generating a story
-#     watson_prompt = """
-#             I want you to act as Dr. Watson. 
-#             Write in two paragraphs.
-#             Describe what you are doing in the apartment.
-#             Also include what is Sherlock Holmes involved in 
-#             (choose one from his usual activities, except solving the crime.)
-#             Use I, instead of Dr. Watson. Don't say I, Dr. Watson.
-#             """
-#     user = openai_service.create_new_user(user_id=jwt_data.user_id)
-#     settings = openai_service.generate_text(user=user, task=watson_prompt)
+# set intro for the story
+@router.post("/setting", status_code=200, response_model=CreateStoryResponse)
+def create_setting(
+    jwt_data: JWTData = Depends(parse_jwt_user_data),
+    svc: Service = Depends(get_service),
+):
+    watson_prompt = """
+           'Write an introduction for your usual Sherlock Holmes stories in 100 words.
+           Do not forget to mention what Sherlock is doing in his apartment.'
+            """
+    user = openai_service.create_new_user(user_id=jwt_data.user_id)
+    settings = openai_service.generate_watson_text(user=user, task=watson_prompt)
 
-#     inserted_id = svc.repository.create_story(
-#         user_id=jwt_data.user_id,
-#         content=settings,
-#         title="The Adventures of Sherlock Holmes: AI edition",
-#     )
+    inserted_id = svc.repository.create_story(
+        user_id=jwt_data.user_id,
+        content=settings,
+        title="The Adventures of Sherlock Holmes: AI edition",
+    )
 
-#     return CreateStoryResponse(inserted_id=inserted_id, generated_story=str(settings))
+    return CreateStoryResponse(inserted_id=inserted_id, generated_story=str(settings))
 
 
-# class CreateStoryRequest(AppModel):
-#     story_id: str
-#     q1: str = Field(
-#         default="You may greet Sherlock Holmes and ask about his activities."
-#     )
+class CreateChatRequest(AppModel):
+    sherlock_message: str
+    type: str
 
 
-# @router.post("/respond_1_sherlock", status_code=200, response_model=CreateStoryResponse)
-# def create_respond_1_sherlock(
-#     input: CreateStoryRequest,
-#     jwt_data: JWTData = Depends(parse_jwt_user_data),
-#     svc: Service = Depends(get_service),
-# ):
-#     # generate respond to Watson
-#     sherlock_prompt = f"""
-#             I want you to act as Sherlock Holmes. 
-#             Answer to your friend, Dr. Watson, who said 
-#             “{input.q1}“ in your usual manner.
-#             """
-#     user = openai_service.get_user(user_id=jwt_data.user_id)
-#     respond_1 = openai_service.generate_text(user=user, task=sherlock_prompt)
-#     update = svc.repository.add_another_part(
-#         user_id=jwt_data.user_id,
-#         story_id=input.story_id,
-#         content=respond_1,
-#     )
+class CreateStoryRequest(AppModel):
+    story_id: str
 
-#     return CreateStoryResponse(
-#         inserted_id=input.story_id, generated_story=str(respond_1)
-#     )
 
-# @router.post("/respond_2_sherlock", status_code=200, response_model=CreateStoryResponse)
-# def create_respond_1_sherlock(
-#     input: CreateStoryRequest,
-#     jwt_data: JWTData = Depends(parse_jwt_user_data),
-#     svc: Service = Depends(get_service),
-# ):
-#     # generate respond to Watson
-#     sherlock_prompt = f"""
-#             I want you to act as Sherlock Holmes. 
-#             Answer to your friend, Dr. Watson, who said 
-#             “{input.q1}“ in your usual manner.
-#             """
-#     user = openai_service.get_user(user_id=jwt_data.user_id)
-#     respond_1 = openai_service.generate_text(user=user, task=sherlock_prompt)
-#     update = svc.repository.add_another_part(
-#         user_id=jwt_data.user_id,
-#         story_id=input.story_id,
-#         content=respond_1,
-#     )
+# introduce the crime
+@router.post("/case_intro", status_code=200, response_model=CreateStoryResponse)
+def create_case_intro(
+    input: CreateStoryRequest,
+    jwt_data: JWTData = Depends(parse_jwt_user_data),
+    svc: Service = Depends(get_service),
+):
+    watson_prompt = """
+            Create a dialogue between Sherlock Holmes and a new visitor, who will describe his/her case.
+            Remeber to describe the visitor's appereance and be detailed about the crime that happened.
+            The visitor must tell full story of what happened. 
+            The visitor must name any individuals who are related to the crime.
+            """
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    case_intro = openai_service.generate_watson_text(user=user, task=watson_prompt)
 
-#     return CreateStoryResponse(
-#         inserted_id=input.story_id, generated_story=str(respond_1)
-#     )
+    inserted_id = svc.repository.add_another_part(
+        user_id=jwt_data.user_id,
+        story_id=input.story_id,
+        content=case_intro,
+    )
+
+    return CreateStoryResponse(
+        inserted_id=input.story_id, generated_story=str(case_intro)
+    )
+
+
+class CreateChatResponse(AppModel):
+    sherlock_message: str
+
+
+# chat with sherlock holmes
+@router.post("/chat", status_code=200, response_model=CreateChatResponse)
+def chatting(
+    input: CreateChatRequest,
+    jwt_data: JWTData = Depends(parse_jwt_user_data),
+):
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    watson_prompt = "What is Sherlock Holmes doing? Answer me in 1 sentence. Don't be specific, don't mention the address."
+    action = openai_service.generate_watson_text(user=user, task=watson_prompt)
+
+    if input.type == "small_talk":
+        prompt = f"""
+            {action}
+            My first sentence is {input.sherlock_message}.
+                """
+        response = openai_service.generate_sherlock_text(user=user, task=prompt)
+    else:
+        prompt = f"""
+            Answer to questions about the case. 
+            Be specific. Respond in 1 sentence. Your answers must be short but clear.
+                """
+        response = openai_service.generate_sherlock_text(user=user, task=prompt)
+
+    return CreateChatResponse(sherlock_message=str(response))
+
+
+# get main suspected individuals for answer choices
+@router.get("/main_suspects", status_code=200, response_model=CreateChatResponse)
+def get_main_suspects(
+    jwt_data: JWTData = Depends(parse_jwt_user_data),
+):
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    watson_prompt = """Who do you think can be the main suspects in this case from the story the vistitor desribed?
+    You must use names of individuals or their description, for example: "a thief". Do not write any explanations or descriptions.
+    You have to think of exactly 3 suspects from the visitor's story!
+    Format your answer: 1. individual, 2. individual, 3. individual
+    """
+    main_suspects = openai_service.generate_watson_text(user=user, task=watson_prompt)
+
+    return CreateChatResponse(sherlock_message=str(main_suspects))
+
+
+# generate investigation of the case
+@router.post("/investigation", status_code=200, response_model=CreateStoryResponse)
+def create_case_investigation(
+    input: CreateStoryRequest,
+    jwt_data: JWTData = Depends(parse_jwt_user_data),
+    svc: Service = Depends(get_service),
+):
+    watson_prompt = """
+           Write a full investigation for the case that the visitor described above.
+           Describe details of the location that you and Sherlock went to. 
+           Describe all related to the case evidence.
+           Include your dialogue with Sherlock Holmes.
+           Do not disclose the resolution of the crime.
+           Finish the investigation of the crime on a climax moment. The criminal is unknown.
+           Only Sherlock Holmes can solve this mystery.
+            """
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    investigation = openai_service.generate_watson_text(user=user, task=watson_prompt)
+
+    inserted_id = svc.repository.add_another_part(
+        user_id=jwt_data.user_id,
+        story_id=input.story_id,
+        content=investigation,
+    )
+
+    return CreateStoryResponse(
+        inserted_id=input.story_id, generated_story=str(investigation)
+    )
+
+
+# unravel the solution to the case through sherlock chain
+@router.post("/solution", status_code=200, response_model=CreateChatResponse)
+def create_soltuion_to_case(
+    input: CreateStoryRequest,
+    jwt_data: JWTData = Depends(parse_jwt_user_data),
+    svc: Service = Depends(get_service),
+):
+    watson_prompt = """
+           Describe the visitor's story and the your and Sherlock's investigation.
+           Be specific. Do not write any explanations or unrelated sentences.
+           You must include all details that the visitor have said and all important evidence 
+           that were found on the investigation.
+           Use only 300 words.
+            """
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    case_details = openai_service.generate_watson_text(user=user, task=watson_prompt)
+
+    sherlock_prompt = f"""
+    Use Watson's description of the case:
+    {case_details}
+    You need to come up with the most creative solution to this case using ONLY YOUR DEDUCTIVE METHODS.
+    Identify the criminal, choose one from the story, and 
+    find an explanation and a motive with which he/she committed the crime.
+    Be specific. In your explanation, you must explain your deductive methods 
+    that were used in the resolution of the case. Write everything from your perspective. Don't use your name.
+    """
+    sherlock_solution = openai_service.generate_sherlock_text(
+        user=user, task=sherlock_prompt
+    )
+
+    inserted_id = svc.repository.add_another_part(
+        user_id=jwt_data.user_id,
+        story_id=input.story_id,
+        content=sherlock_solution,
+    )
+
+    return CreateChatResponse(sherlock_message=str(sherlock_solution))
+
+
+# conclusion
+@router.post("/conclusion", status_code=200, response_model=CreateStoryResponse)
+def create_conclusion(
+    input: CreateStoryRequest,
+    jwt_data: JWTData = Depends(parse_jwt_user_data),
+    svc: Service = Depends(get_service),
+):
+    user = openai_service.get_user(user_id=jwt_data.user_id)
+    prompt = f"""
+        Write conclusion to the story. Describe how you and Sherlock, 
+        after solving the case, doing mundane things. 
+        Use only 3-4 sentences to end the story, don't add anything unnecessary.
+            """
+    response = openai_service.generate_watson_text(user=user, task=prompt)
+
+    inserted_id = svc.repository.add_another_part(
+        user_id=jwt_data.user_id,
+        story_id=input.story_id,
+        content=response,
+    )
+
+    return CreateStoryResponse(
+        inserted_id=input.story_id, generated_story=str(response)
+    )
