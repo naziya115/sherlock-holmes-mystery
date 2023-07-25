@@ -17,6 +17,12 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 openai_service = OpenAIService(api_key=openai_api_key)
 
 
+class CreateStoryRequest(AppModel):
+    story_id: str
+    sherlock_message: str = Field(default="")
+    type: str = Field(default="")
+
+
 class CreateStoryResponse(AppModel):
     inserted_id: Any = Field(alias="_id")
     generated_story: str
@@ -44,13 +50,8 @@ def create_setting(
     return CreateStoryResponse(inserted_id=inserted_id, generated_story=str(settings))
 
 
-class CreateChatRequest(AppModel):
+class CreateChatResponse(AppModel):
     sherlock_message: str
-    type: str
-
-
-class CreateStoryRequest(AppModel):
-    story_id: str
 
 
 # introduce the crime
@@ -62,9 +63,9 @@ def create_case_intro(
 ):
     watson_prompt = """
             Create a dialogue between Sherlock Holmes and a new visitor, who will describe his/her case.
-            Remeber to describe the visitor's appereance and be detailed about the crime that happened.
+            Remember to describe the visitor's appereance and be detailed about the crime that happened.
             The visitor must tell full story of what happened. 
-            The visitor must name any individuals who are related to the crime.
+            The visitor must name 3 individuals who are related to the crime.
             """
     user = openai_service.get_user(user_id=jwt_data.user_id)
     case_intro = openai_service.generate_watson_text(user=user, task=watson_prompt)
@@ -80,15 +81,12 @@ def create_case_intro(
     )
 
 
-class CreateChatResponse(AppModel):
-    sherlock_message: str
-
-
 # chat with sherlock holmes
 @router.post("/chat", status_code=200, response_model=CreateChatResponse)
 def chatting(
-    input: CreateChatRequest,
+    input: CreateStoryRequest,
     jwt_data: JWTData = Depends(parse_jwt_user_data),
+    svc: Service = Depends(get_service),
 ):
     user = openai_service.get_user(user_id=jwt_data.user_id)
     watson_prompt = "What is Sherlock Holmes doing? Answer me in 1 sentence. Don't be specific, don't mention the address."
@@ -104,8 +102,15 @@ def chatting(
         prompt = f"""
             Answer to questions about the case. 
             Be specific. Respond in 1 sentence. Your answers must be short but clear.
+            Do not use your name in a response.
                 """
         response = openai_service.generate_sherlock_text(user=user, task=prompt)
+
+    inserted_id = svc.repository.add_another_part(
+        user_id=jwt_data.user_id,
+        story_id=input.story_id,
+        content='"' + input.sherlock_message + '"' '$\n"' + response + '"$\n',
+    )
 
     return CreateChatResponse(sherlock_message=str(response))
 
@@ -209,6 +214,15 @@ def create_conclusion(
         Use only 3-4 sentences to end the story, don't add anything unnecessary.
             """
     response = openai_service.generate_watson_text(user=user, task=prompt)
+
+    # generate title for a story
+    title_prompt = f""" You need to create a title for a story based on its summary: {response}. 
+        No more than 5 words in the title.
+        Use " " for both sides of the title."""
+    title = openai_service.generate_watson_text(user=user, task=title_prompt)
+    svc.repository.update_title(
+        title=title, user_id=jwt_data.user_id, story_id=input.story_id
+    )
 
     inserted_id = svc.repository.add_another_part(
         user_id=jwt_data.user_id,

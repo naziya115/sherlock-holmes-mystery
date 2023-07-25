@@ -23,39 +23,11 @@ class OpenAIService:
 
         self.all_users = []
 
-        # llm chain and chat model for the title only
-        self.title_template = """
-        You need to create a title for a story based on its summary: {story}. 
-        No more than 5 words in the title.
-        Use " " for both sides of the title.
-        """
-        self.title_prompt = PromptTemplate(
-            input_variables=["story"], template=self.title_template
-        )
-
-        self.title_model = ChatOpenAI(
-            openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo-16k",
-            streaming=True,
-            callbacks=[StreamingStdOutCallbackHandler()],
-            temperature=0.7,
-            max_tokens=20,
-        )
-
-        self.title_chain = LLMChain(
-            llm=self.title_model,
-            verbose=True,
-            prompt=self.title_prompt,
-        )
-
     def generate_watson_text(self, user: dict, task: str) -> str:
         return user["watson_chain"].predict(task=task)
 
     def generate_sherlock_text(self, user: dict, task: str) -> str:
         return user["sherlock_chain"].predict(task=task)
-
-    def generate_next_question(self, prev_story: str):
-        return self.question_chain.predict(story=prev_story)
 
     def create_new_user(self, user_id):
         self.remove_existing_user(user_id)
@@ -132,6 +104,3 @@ class OpenAIService:
                 self.all_users.remove(user)
                 return True
         return False
-
-    def generate_title(self, story):
-        return self.title_chain.predict(story=story)
