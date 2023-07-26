@@ -3,7 +3,7 @@ services:
     name: fastapi
     runtime: docker
     plan: free
-    repo: https://github.com/naziya115/sprint-1.git
+    repo: https://github.com/naziya115/sherlock-holmes-mystery-back
     region: frankfurt
     branch: main
     envVars:
