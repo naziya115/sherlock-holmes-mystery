@@ -102,7 +102,6 @@ def chatting(
         prompt = f"""
             Answer to questions about the case. 
             Be specific. Respond in 1 sentence. Your answers must be short but clear.
-            Do not use your name in a response.
                 """
         response = openai_service.generate_sherlock_text(user=user, task=prompt)
 
