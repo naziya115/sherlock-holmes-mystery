@@ -62,10 +62,14 @@ def create_case_intro(
     svc: Service = Depends(get_service),
 ):
     watson_prompt = """
-            Create a dialogue between Sherlock Holmes and a new visitor, who will describe his/her case.
-            Remember to describe the visitor's appereance and be detailed about the crime that happened.
-            The visitor must tell full story of what happened. 
+            Write an introduction how you and Sherlock Holmes have learned about the new case which you will unravel. 
+            Describe a visitor who came in to tell Sherlock Holmes about his/her case. 
+            Describe the visitor’s appearance. Create a dialogue between Holmes and this new visitor. 
+            In the dialogue, include witty comments of Sherlock Holmes who uses his inductive reasoning
+            to notice little details about the character’s appearance that leads him to further draw conclusions about the character’s 
+            personality or some facts. The visitor must tell full story of what happened to him/her, what crime have been committed. 
             The visitor must name 3 individuals who are related to the crime.
+
             """
     user = openai_service.get_user(user_id=jwt_data.user_id)
     case_intro = openai_service.generate_watson_text(user=user, task=watson_prompt)
@@ -178,13 +182,13 @@ def create_soltuion_to_case(
     case_details = openai_service.generate_watson_text(user=user, task=watson_prompt)
 
     sherlock_prompt = f"""
-    Use Watson's description of the case:
-    {case_details}
-    You need to come up with the most creative solution to this case using ONLY YOUR DEDUCTIVE METHODS.
-    Identify the criminal, choose one from the story, and 
-    find an explanation and a motive with which he/she committed the crime.
-    Be specific. In your explanation, you must explain your deductive methods 
-    that were used in the resolution of the case. Write everything from your perspective. Don't use your name.
+    Use Watson's description of the case ‘{case_details}’. 
+    You need to come up with the most creative solution to this case using your inductive reasoning and deduction methods to
+    identify the criminal, choose one from the story. The explanation and the criminal’s identity must be very surprising and unexpected. 
+    Find an explanation and a motive with which he/she committed the crime. 
+    Be specific.
+    In your explanation, you must explain your inductive reasoning and deduction methods 
+    that were used in the resolution of the case. Write everything from your perspective.
     """
     sherlock_solution = openai_service.generate_sherlock_text(
         user=user, task=sherlock_prompt
@@ -208,9 +212,8 @@ def create_conclusion(
 ):
     user = openai_service.get_user(user_id=jwt_data.user_id)
     prompt = f"""
-        Write conclusion to the story. Describe how you and Sherlock, 
-        after solving the case, doing mundane things. 
-        Use only 3-4 sentences to end the story, don't add anything unnecessary.
+        Craft an ending of the story where you and Sherlock Holmes, after solving the case, 
+        doing mundane things. Smoking cigarettes, reading and discussing different topics. Write this in a dialogue format.
             """
     response = openai_service.generate_watson_text(user=user, task=prompt)
 
