@@ -37,7 +37,7 @@ class StoriesRepository:
         return self.database["stories"].update_one(
             filter={"user_id": ObjectId(user_id), "_id": ObjectId(story_id)},
             update={
-                "$set": {"content": prev_story["content"] + " \n $" + content},
+                "$set": {"content": prev_story["content"] + "$" + content},
             },
         )
 

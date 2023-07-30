@@ -112,7 +112,7 @@ def chatting(
     inserted_id = svc.repository.add_another_part(
         user_id=jwt_data.user_id,
         story_id=input.story_id,
-        content='- "' + input.sherlock_message + '"' '$\n"' + response + '"$\n',
+        content='- "' + input.sherlock_message + '"' '$- "' + response + '"$',
     )
 
     return CreateChatResponse(sherlock_message=str(response))
