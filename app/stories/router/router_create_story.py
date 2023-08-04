@@ -67,7 +67,7 @@ def create_case_intro(
             Describe the visitor’s appearance. Create a dialogue between Holmes and this new visitor. 
             In the dialogue, include witty comments of Sherlock Holmes who uses his inductive reasoning
             to notice little details about the character’s appearance that leads him to further draw conclusions about the character’s 
-            personality or some facts. The visitor must tell full story of what happened to him/her, what crime have been committed. 
+            personality or some facts. Describe the visitor's full story of what happened to him/her, what crime have been committed. 
             The visitor must name 3 individuals who are related to the crime.
 
             """
