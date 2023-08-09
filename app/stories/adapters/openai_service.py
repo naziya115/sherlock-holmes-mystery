@@ -18,7 +18,7 @@ class OpenAIService:
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.5,
-            max_tokens=1000,
+            max_tokens=8000,
         )
 
         self.all_users = []
