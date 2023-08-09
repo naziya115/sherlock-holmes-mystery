@@ -14,7 +14,7 @@ class OpenAIService:
 
         self.chat_model = ChatOpenAI(
             openai_api_key=openai.api_key,
-            model="gpt-3.5-turbo-16k",
+            model="gpt-4-0314",
             streaming=True,
             callbacks=[StreamingStdOutCallbackHandler()],
             temperature=0.5,
